@@ -1,0 +1,75 @@
+Practical 8a, Per-VLAN Spanning Tree Behavior
+Topology
+(Diagram shows DLS1, DLS2, ALS1, and ALS2 connected via multiple FastEthernet links including Fa0/7 through Fa0/12)
+
+ON DLS1 AND DLS2
+DLS1(config)# interface range fastEthernet 0/7 - 12
+DLS1(config-if-range)# switchport trunk encapsulation dot1q
+DLS1(config-if-range)# switchport mode trunk
+
+ALS1# configure terminal
+ALS1(config)# interface range fastEthernet 0/7 - 12
+ALS1(config-if-range)# switchport mode trunk
+
+ALS2# configure terminal
+ALS2(config)# interface range fastEthernet 0/7 - 12
+ALS2(config-if-range)# switchport mode trunk
+
+Step 1: Configure VTP.
+DLS1(config)# vtp mode transparent
+Setting device to VTP TRANSPARENT mode.
+DLS1(config)# vtp domain CISCO
+Changing VTP domain name from NULL to CISCO
+DLS1(config)# vlan 10,20
+DLS1(config-vlan)# end
+
+DLS1# show vlan brief.
+DLS1# show spanning-tree
+
+Spanning tree enabled protocol ieee  Root ID
+Priority 3276
+
+VLAN0010
+VLAN0020
+
+Step 3: Assign a root switch for each VLAN. .
+DLS1(config)# spanning-tree vlan 10 priority 4096
+DLS2(config)# spanning-tree vlan 20 priority 4096
+DLS1# show spanning-tree
+VLAN0010
+This bridge is the root
+
+DLS2# show spanning-tree
+VLAN0001
+This bridge is the root
+VLAN0020
+Spanning tree enabled protocol ieee  Root ID
+Priority 4116
+Address 000a.b8a9.d680
+This bridge is the root
+
+ALS1# show spanning-tree
+ALS2# show spanning-tree
+
+Step 4: Configure RSTP.
+DLS1(config)# spanning-tree mode rapid-pvst
+DLS1# show spanning-tree
+VLAN0001
+Spanning tree enabled protocol rstp Root ID
+Priority 32769
+Address 000a.b8a9.d680
+Cost 19
+Port 13 (FastEthernet0/11)
+Hello Time 2 sec Max Age 20 sec Forward Delay 15 sec
+
+VLAN0010
+Spanning tree enabled protocol rstp Root ID
+Priority 4106
+Address 000a.b8a9.d780
+This bridge is the root
+Hello Time 2 sec Max Age 20 sec Forward Delay 15 sec
+
+VLAN0020
+Spanning tree enabled protocol rstp Root ID
+Priority 4116
+Address 000a.b8a9.d680
