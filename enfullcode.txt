@@ -1,0 +1,1068 @@
+
+1A Single Area OSPF Link Costs and Interface Priorities
+
+Step 1: Configure addressing and loopbacks
+Router R1
+
+
+R1# configure terminal
+R1(config)# interface Loopback1
+R1(config-if)# description Engineering Department
+R1(config-if)# ip address 10.1.1.1 255.255.255.0
+R1(config-if)# exit
+R1(config)# interface FastEthernet0/0
+R1(config-if)# ip address 10.1.200.1 255.255.255.0
+R1(config-if)# no shutdown
+R1(config)# interface Serial 0/0/0
+R1(config-if)# ip address 10.1.100.1 255.255.255.0
+R1(config-if)# clockrate 64000
+R1(config-if)# bandwidth 64
+R1(config-if)# no shutdown
+Router R2
+
+
+R2# configure terminal
+R2(config)# interface Loopback2
+R2(config-if)# description Marketing Department
+R2(config-if)# ip address 10.1.2.1 255.255.255.0
+R2(config-if)# exit
+R2(config)# interface FastEthernet0/0
+R2(config-if)# ip address 10.1.200.2 255.255.255.0
+R2(config-if)# no shutdown
+R2(config)# interface Serial 0/0/0
+R2(config-if)# ip address 10.1.100.2 255.255.255.0
+R2(config-if)# bandwidth 64
+R2(config-if)# no shutdown
+Router R3
+
+
+R3# configure terminal
+R3(config)# interface Loopback3
+R3(config-if)# description Accounting Department
+R3(config-if)# ip address 10.1.3.1 255.255.255.0
+R3(config-if)# exit
+R3(config)# interface FastEthernet0/0
+R3(config-if)# ip address 10.1.200.3 255.255.255.0
+R3(config-if)# no shutdown
+
+Step 2: Add physical interfaces to OSPF
+
+R1(config)# router ospf 1
+R1(config-router)# network 10.1.100.0 0.0.0.255 area 0
+R1(config-router)# network 10.1.200.0 0.0.0.255 area 0
+
+R2(config)# router ospf 1
+R2(config-router)# network 10.1.100.0 0.0.0.255 area 0
+R2(config-router)# network 10.1.200.0 0.0.0.255 area 0
+
+R3(config)# router ospf 1
+R3(config-router)# network 10.1.200.0 0.0.0.255 area 0
+Step 3: Verification (Commands & Output)
+Check Protocols: R1# show ip protocols (Router ID 10.1.1.1)
+
+Check Neighbors: R1# show ip ospf neighbor
+
+10.1.2.1 (FULL/BDR via FastEthernet0/0)
+
+10.1.3.1 (FULL/DR via FastEthernet0/0)
+
+10.1.2.1 (FULL/- via Serial0/0/0)
+
+Check Database: R1# show ip ospf database
+
+Step 4: Add loopback interfaces to OSPF
+
+R1(config)# router ospf 1
+R1(config-router)# network 10.1.1.0 0.0.0.255 area 0
+
+R2(config)# router ospf 1
+R2(config-router)# network 10.1.2.0 0.0.0.255 area 0
+
+R3(config)# router ospf 1
+R3(config-router)# network 10.1.3.0 0.0.0.255 area 0
+Note: Loopback interfaces are treated as "stub hosts" (/32) by default. To change this to a point-to-point network:
+
+
+R1(config-if)# ip ospf network point-to-point
+R2(config-if)# ip ospf network point-to-point
+R3(config-if)# ip ospf network point-to-point
+Step 5: Modify OSPF link costs
+
+R1(config)# interface FastEthernet 0/0
+R1(config-if)# ip ospf cost 50
+
+R2(config)# interface FastEthernet 0/0
+R2(config-if)# ip ospf cost 50
+
+R3(config)# interface FastEthernet 0/0
+R3(config-if)# ip ospf cost 50
+Step 6: Modify interface priorities (DR/BDR Election)
+
+R1(config)# interface FastEthernet 0/0
+R1(config-if)# ip ospf priority 10
+
+R2(config)# interface FastEthernet 0/0
+R2(config-if)# ip ospf priority 5
+R1 show ospf neighbor details
+
+
+
+
+Multi Area OSPF with Stub Area and authentication
+
+
+Step 1: Configure addressing and loopbacks.
+R1# conf t
+Enter configuration commands, one per line. End with CNTL/Z.
+R1(config)# int Lo1
+R1(config-if)# description Engineering Department
+R1(config-if)# ip address 10.1.1.1 255.255.255.0
+R1(config-if)# int s0/0/0
+R1(config-if)# ip address 10.1.12.1 255.255.255.0
+R1(config-if)# clockrate 64000
+R1(config-if)# no shutdown
+R2# # conf t
+R2(config int Lo2
+R2(config-if)# description Marketing Department
+R2(config-if)# ip address 10.1.2.1 255.255.255.0
+R2(config-if)# )# int s0/0/0
+R2(config-if)# ip address 10.1.12.2 255.255.255.0
+R2(config-if)# no shutdown
+R2(config-if)# int s0/0/1
+R2(config-if)# ip address 10.1.23.2 255.255.255.0
+R2(config-if)# clockrate 64000
+R2(config-if)# no shutdown
+R3# conf t
+R3(config)# int Lo3
+R3(config-if)# description Accounting Department
+R3(config-if)# ip address 10.1.3.1 255.255.255.0
+R3(config-if int Lo20
+R3(config-if)# description Connection to another AS
+R3(config-if)# ip address 172.20.200.1 255.255.255.0
+R3(config-if)# )# int s0/0/1
+R3(config-if)# ip address 10.1.23.3 255.255.255.0
+R3(config-if)# no shutdown
+Step 2: Add interfaces into OSPF.
+R1(config)# router ospf 1
+R1(config-router)# network 10.1.12.0 0.0.0.255 area 0
+R1(config-router)# network 10.1.1.0 0.0.0.255 area 0
+R1(config-router)# exit
+R1(config)# int Lo1
+R1(config-if)# ip ospf network point-to-point
+R2(config)# router ospf 1
+R2(config-router)# network 10.1.12.0 0.0.0.255 area 0
+R2(config-router)# network 10.1.2.0 0.0.0.255 area 0
+R2(config-router)# exit
+R2(config)# int Lo2
+R2(config-if)# ip ospf network point-to-point
+
+R1,R2# show ip ospf neighbour
+
+R1,R2# show ip route
+
+R2(config)# router ospf 1
+R2(config-router)# network 10.1.23.0 0.0.0.255 area 23
+R3(config)# router ospf 1
+R3(config-router)# network 10.1.23.0 0.0.0.255 area 23
+R3(config-router)# network 10.1.3.0 0.0.0.255 area 23
+R3(config-router)# exit
+R3(config)# int Lo3
+R3(config-if)# ip ospf network point-to-point
+
+R2# show ip ospf neighbour
+
+R1# show ip route
+
+O IA 10.1.3.0 [110/129] via 10.1.12.2, 00:00:28, Serial0/0/0
+O 10.1.2.0 [110/65] via 10.1.12.2, 00:01:38, Serial0/0/0
+O IA 10.1.23.0 [110/128] via 10.1.12.2, 00:01:38, Serial0/0/0
+
+Step 3: Configure a stub area.
+R2(config)# router ospf 1
+R2(config-router)# area 23 stub
+R3(config)# router ospf 1
+R3(config-router)# area 23 stub
+R2,R3# show ip ospf neighbor
+R3# show ip route
+
+O IA 10.1.1.0 [110/129] via 10.1.23.2, 00:00:56, Serial0/0/1
+C 10.1.23.0 is directly connected, Serial0/0/1
+O*IA 0.0.0.0/0 [110/65] via 10.1.23.2, 00:00:56, Serial0/0/1
+
+R2# show ip ospf
+
+Step 4: Configure a totally stubby area.
+
+R3# show ip route
+
+R2# show ip ospf database
+
+R2(config)# router ospf 1
+R2(config-router)# area 23 stub no-summary
+
+R3# show ip route
+
+O*IA 0.0.0.0/0 [110/65] via 10.1.23.2, 00:00:10, Serial0/0/1
+
+R3# show ip ospf database
+Summary Net Link States (Area 23)
+Link ID ADV Router Age Seq# Checksum
+0.0.0.0 10.1.2.1 68 0x80000002 0x0039F5
+
+Step 5: Configure a not-so-stubby area.
+
+R2(config)# router ospf 1
+R2(config-router)# no area 23 stub
+R2(config-router)# area 23 nssa
+R3(config)# router ospf 1
+R3(config-router)# no area 23 stub
+R3(config-router)# area 23 nssa
+R3(config-router)# redistribute connected subnets
+
+R2# show ip ospf
+
+Area 23
+Number of interfaces in this area is 1
+It is a NSSA area
+Perform type-7/type-5 LSA translation
+
+R1# show ip route
+
+O E2 172.20.200.0 [110/20] via 10.1.12.2, 00:01:22, Serial0/0/0
+
+R2(config)# router ospf 1
+R2(config-router)# area 23 nssa no-summary
+
+R3# show ip route
+
+O*IA 0.0.0.0/0 [110/65] via 10.1.23.2, 00:00:20, Serial0/0/1
+
+R2# show ip ospf database
+
+Summary Net Link States (Area 23)
+Link ID ADV Router Age Seq# Checksum
+0.0.0.0 10.1.2.1 34 0x80000001 0x00C265
+Type-7 AS External Link States (Area 23)
+Link ID ADV Router Age Seq# Checksum Tag
+10.1.3.0 10.1.3.1 200 0x80000001 0x0076FC 0
+Type-5 AS External Link States
+
+Step 6: Configure OSPF interface authentication.
+
+R2(config)#int s0/0/1
+
+R2(config-if)# ip ospf authentication
+R2(config-if)# ip ospf authentication-key cisco
+R3(config)# int s0/0/1
+R3(config-if)# ip ospf authentication
+R3(config-if)# ip ospf authentication-key cisco
+
+R2# show ip ospf interface serial 0/0/1
+Simple password authentication enabled
+
+R1(config)# interface serial 0/0/0
+R1(config-if)# ip ospf authentication message-digest
+R1(config-if)# ip ospf message-digest-key 1 md5 cisco
+R2(config)# interface serial 0/0/0
+R2(config-if)# ip ospf authentication message-digest
+R2(config-if)# ip ospf message-digest-key 1 md5 cisco
+
+R1# show ip ospf interface serial 0/0/0
+Message digest authentication enabled
+Youngest key id is 1
+
+
+
+OSPF Virtual Link And Area Summarization
+
+Topoly:- R1 S0/0/0
+             >  R2 S0/0/1
+         R3 S0/0/1  
+
+Step 1: Configure addressing and loopbacks.
+
+R1# conf t
+R1(config)# int Lo1
+R1(config-if)# description Engineering Department
+R1(config-if)# ip address 10.1.1.1 255.255.255.0
+R1(config-if)# int Lo30
+R1(config-if)# ip address 172.30.30.1 255.255.255.252
+R1(config-if)# int s0/0/0
+R1(config-if)# ip address 10.1.12.1 255.255.255.0
+R1(config-if)# clock rate 64000
+R1(config-if)# no shutdown
+
+R2# conf t
+R2(config)# int Lo2
+R2(config-if)# description Marketing Department
+R2(config-if)# ip address 10.1.2.1 255.255.255.0
+R2(config-if)# int s0/0/0
+R2(config-if)# ip address 10.1.12.2 255.255.255.0
+R2(config-if)# no shutdown
+R2(config-if)# int s0/0/1
+R2(config-if)# ip address 10.1.23.2 255.255.255.0
+R2(config-if)# clock rate 64000
+R2(config-if)# no shutdown
+
+R3# conf t
+R3(config)# int Lo3
+R3(config-if)# description Accounting Department
+R3(config-if)# ip address 10.1.3.1 255.255.255.0
+R3(config-if)# int Lo100
+R3(config-if)# ip address 192.168.100.1 255.255.255.0
+R3(config-if)# int Lo101
+R3(config-if)# ip address 192.168.101.1 255.255.255.0
+R3(config-if)# int Lo102
+R3(config-if)# ip address 192.168.102.1 255.255.255.0
+R3(config-if)# int Lo104
+R3(config-if)# ip address 192.168.103.1 255.255.255.0
+R3(config-if)# int s0/0/1
+R3(config-if)# ip address 10.1.23.3 255.255.255.0
+R3(config-if)# no shutdown
+
+Step 2: Add interfaces into OSPF.
+
+R1(config)# router ospf 1
+R1(config-router)# network 10.1.12.0 0.0.0.255 area 0
+R1(config-router)# network 10.1.1.0 0.0.0.255 area 0
+R1(config-router)# exit
+R1(config)# int Lo1
+R1(config-if)# ip ospf network point-to-point
+
+R2(config)# router ospf 1
+R2(config-router)# network 10.1.12.0 0.0.0.255 area 0
+R2(config-router)# network 10.1.2.0 0.0.0.255 area 0
+R2(config-router)# exit
+R2(config)# int Lo2
+R2(config-if)# ip ospf network point-to-point
+
+R1, R2# show ip ospf neighbour
+R1, R2# show ip route
+
+R2(config)# router ospf 1
+R2(config-router)# network 10.1.23.0 0.0.0.255 area 23
+
+R3(config)# router ospf 1
+R3(config-router)# network 10.1.23.0 0.0.0.255 area 23
+R3(config-router)# network 10.1.3.0 0.0.0.255 area 23
+R3(config-router)# exit
+R3(config)# int Lo3
+R3(config-if)# ip ospf network point-to-point
+
+R2# show ip ospf neighbour
+
+Step 3: Create a virtual link.
+
+R3(config)# router ospf 1
+R3(config-router)# network 192.168.100.0 0.0.3.255 area 100
+R3(config-router)# exit
+R3(config)# int Lo100
+R3(config-if)# ip ospf network point-to-point
+R3(config-if)# int Lo101
+R3(config-if)# ip ospf network point-to-point
+R3(config-if)# int Lo102
+R3(config-if)# ip ospf network point-to-point
+R3(config-if)# int Lo103
+R3(config-if)# ip ospf network point-to-point
+
+R2# show ip route
+R2# show ip ospf
+# Routing Process "ospf 1" with ID 10.1.2.1
+R3# show ip ospf
+# Routing Process "ospf 1" with ID 192.168.103.1
+
+R2(config)# router ospf 1
+R2(config-router)# area 23 virtual-link 192.168.103.1
+
+R3(config)# router ospf 1
+R3(config-router)# area 23 virtual-link 10.1.2.1
+
+R2# show ip route
+R2# show ip ospf neighbour
+R2# show ip ospf interface
+# OSPF_VL0 is up, line protocol is up
+
+Step 4: Summarize an area.
+
+R3(config)# router ospf 1
+R3(config-router)# area 100 range 192.168.100.0 255.255.252.0
+
+R2# show ip route
+R2# show ip ospf database
+R3# show ip route
+
+Step 5: Generate a default route into OSPF.
+
+R1(config)# router ospf 1
+R1(config-router)# default-information originate always
+
+R2, R3# show ip route
+R3# ping 172.30.30.1
+
+Manipulating Administrative Distances
+
+Step 1 : Configure router loopbacks and addressing.
+R1# conf t
+R1(config)# interface loopback 1
+R1(config-if)# ip address 172.16.1.1 255.255.255.0
+R1(config)# interface loopback 101
+R1(config-if)# ip address 192.168.101.1 255.255.255.0
+R1(config-if)# interface fastethernet 0/0
+R1(config-if)# ip address 172.16.12.1 255.255.255.0
+R1(config-if)# no shutdown
+R1(config-if)# interface serial 0/0/1
+R1(config-if)# bandwidth 64
+R1(config-if)# ip address 172.16.13.1 255.255.255.0
+R1(config-if)# no shutdown
+R2# conf t
+R2(config)# interface loopback 2
+R2(config-if)# ip address 172.16.2.1 255.255.255.0
+R2(config-if)# interface loopback 102
+R2(config-if)# ip address 192.168.102.1 255.255.255.0
+R2(config-if)# interface fastethernet 0/0
+R2(config-if)# ip address 172.16.12.2 255.255.255.0
+R2(config-if)# no shutdown
+R2(config-if)# interface fastethernet 0/1
+R2(config-if)# ip address 172.16.23.2 255.255.255.0
+R2(config-if)# no shutdown
+R3# conf t
+R3(config)# interface loopback 3
+R3(config-if)# ip address 172.16.3.1 255.255.255.0
+R3(config-if)# interface loopback 103
+R3(config-if)# ip address 192.168.103.1 255.255.255.0
+R3(config-if)# interface fastethernet 0/0
+R3(config-if)# ip address 172.16.23.3 255.255.255.0
+R3(config-if)# no shutdown
+R3(config-if)# interface serial 0/0/0
+R3(config-if)# bandwidth 64
+R3(config-if)# ip address 172.16.13.3 255.255.255.0
+R3(config-if)# clock rate 64000
+R3(config-if)# no shutdown
+
+Step 2 : Configure switch VLANs.
+Switch(config)# vlan 12
+Switch(config-vlan)# name R1-R2
+Switch(config-vlan)# vlan 23
+Switch(config-vlan)# name R2-R3
+Switch(config-vlan)# exit
+Switch(config)# interface fastEthernet 0/1
+Switch(config-if)# description To R1 Fa0/0
+Switch(config-if)# switchport mode access
+Switch(config-if)# switchport access vlan 12
+Switch(config-if)# interface fastEthernet 0/2
+Switch(config-if)# description To R2 Fa0/0
+Switch(config-if)# switchport mode access
+Switch(config-if)# switchport access vlan 12
+Switch(config-if)# interface fastEthernet 0/3
+Switch(config-if)# description To R3 Fa0/0
+Switch(config-if)# switchport mode access
+Switch(config-if)# switchport access vlan 23
+Switch(config-if)# interface fastEthernet 0/4
+Switch(config-if)# description To R2 Fa0/1
+Switch(config-if)# switchport mode access
+Switch(config-if)# switchport access vlan 23
+
+Step 3 : Configure RIP.
+R1(config)# router rip
+R1(config-router)# version 2
+R1(config-router)# no auto-summary
+R1(config-router)# network 172.16.0.0
+R1(config-router)# network 192.168.101.0
+R2(config)# router rip
+R2(config-router)# version 2
+R2(config-router)# no auto-summary
+R2(config-router)# network 172.16.0.0
+R2(config-router)# network 192.168.102.0
+R3(config)# router rip
+R3(config-router)# version 2
+R3(config-router)# no auto-summary
+R3(config-router)# network 172.16.0.0
+R3(config-router)# network 192.168.103.0
+R1,R2,R3# show ip route rip
+R1,R2,R3# show ip protocols
+
+Step 4 : Configure OSPF.
+R1(config)# interface loopback 1
+R1(config-if)# ip ospf network point-to-point
+R1(config-if)# interface loopback 101
+R1(config-if)# ip ospf network point-to-point
+R1(config-if)# router ospf 1
+R1(config-router)# network 172.16.0.0 0.0.255.255 area 0
+R1(config-router)# network 192.168.101.0 0.0.0.255 area 0
+R2(config)# interface loopback 2
+R2(config-if)# ip ospf network point-to-point
+R2(config-if)# interface loopback 102
+R2(config-if)# ip ospf network point-to-point
+R2(config-if)# router ospf 1
+R2(config-router)# network 172.16.0.0 0.0.255.255 area 0
+R2(config-router)# network 192.168.102.0 0.0.0.255 area 0
+R3(config)# interface loopback 3
+R3(config-if)# ip ospf network point-to-point
+R3(config-if)# interface loopback 103
+R3(config-if)# ip ospf network point-to-point
+R3(config-if)# router ospf 1
+R3(config-router)# network 172.16.0.0 0.0.255.255 area 0
+R3(config-router)# network 192.168.103.0 0.0.0.255 area 0
+R1# show ip ospf neighbour
+R1# show ip route
+R2# show ip ospf neighbour
+R2# show ip route
+
+Step 5 : Modify the routing protocol distance
+R1(config)# router rip
+R1(config-router)# distance 100
+R2(config)# router rip
+R2(config-router)# distance 100
+R3(config)# router rip
+R3(config-router)# distance 100
+R1,R2, R3# show ip route
+R1# show ip protocols
+
+Step 7: Modify distance based on route source
+R1(config)# router ospf 1
+R1(config-router)# distance 85 192.168.100.0 0.0.3.255
+R2(config)# router ospf 1
+R2(config-router)# distance 85 192.168.100.0 0.0.3.255
+R3(config)# router ospf 1
+R3(config-router)# distance 85 192.168.100.0 0.0.3.255
+R1,R2, R3# show ip route
+R1# show ip protocols
+
+Step 8: Modify distance based on an access list.
+R1(config)# access-list 1 permit 172.16.0.0 0.0.255.255
+R1(config)# router rip
+R1(config-router)# distance 65 0.0.0.0 255.255.255.255 1
+R2(config)# access-list 1 permit 172.16.0.0 0.0.255.255
+R2(config)# router rip
+R2(config-router)# distance 65 0.0.0.0 255.255.255.255 1
+R3(config)# access-list 1 permit 172.16.0.0 0.0.255.255
+R3(config)# router rip
+R3(config-router)# distance 65 0.0.0.0 255.255.255.255 1
+R1,R2, R3# show ip route
+R1,r2,R3# show ip protocols
+
+
+
+Configuring OSPF for IPv6
+Step 1: Configuring the hostname and loopback interfaces.
+Router(config)# hostname R1
+R1(config)# interface loopback0
+R1(config-if)# ip address 10.1.1.1 255.255.255.0
+R1(config-if)# ipv6 address FEC0::1:1/112
+Router(config)# hostname R2
+R2(config)# interface loopback0
+R2(config-if)# ip address 10.1.2.1 255.255.255.0
+R2(config-if)# ipv6 address FEC0::2:1/112
+Router(config)# hostname R3
+R3(config)# interface loopback0
+R3(config-if)# ip address 10.1.3.1 255.255.255.0
+R3(config-if)# ipv6 address FEC0::3:1/112
+
+Step 2 : Configure static IPv6 addresses.
+R1(config)# interface serial0/0/0
+R1(config-if)# ipv6 address FEC0::12:1/112
+R1(config-if)# clockrate 64000
+R1(config-if)# bandwidth 64
+R1(config-if)# no shutdown
+R1(config-if)# interface serial0/0/1
+R1(config-if)# ipv6 address FEC0::13:1/112
+R1(config-if)# bandwidth 64
+R1(config-if)# no shutdown
+R2(config)# interface serial0/0/0
+R2(config-if)# ipv6 address FEC0::12:2/112
+R2(config-if)# bandwidth 64
+R2(config-if)# no shutdown
+R3(config)# interface serial0/0/0
+R3(config-if)# ipv6 address FEC0::13:3/112
+R3(config-if)# clockrate 64000
+R3(config-if)# bandwidth 64
+R3(config-if)# no shutdown
+R1# ping FEC0::12:2
+R1# ping FEC0::13:3
+R2# ping FEC0::12:1
+R3# ping FEC0::13:1
+
+Step 3: Change the link-local address on an interface.
+R1# show ipv6 interface serial 0/0/0
+R1(config)# interface serial0/0/0
+R1(config-if)# ipv6 address FE80::1 link-local
+R2(config)# interface serial0/0/0
+R2(config-if)# ipv6 address FE80::2 link-local
+R1# ping FE80::2
+R2# ping FE80::1
+R1# show ipv6 interface serial 0/0/0
+R2# show ipv6 interface serial 0/0/0
+
+Step 4: Configure EUI-64 addresses.
+R2(config)# interface fastEthernet 0/0
+R2(config-if)# ipv6 address FEC0:23::/64 eui-64
+R2(config-if)# no shutdown
+R3(config)# interface fastEthernet 0/0
+R3(config-if)# ipv6 address FEC0:23::/64 eui-64
+R3(config-if)# no shutdown
+R2# show ipv6 interface fastEthernet 0/0
+R3# show ipv6 interface brief
+R2# ping FEC0:23::218:B9FF:FECD:BEF0
+
+Step 5: Enable IPv6 routing and CEF.
+R1(config)# ipv6 unicast-routing
+R1(config)# ipv6 cef
+R2(config)# ipv6 unicast-routing
+R2(config)# ipv6 cef
+R3(config)# ipv6 unicast-routing
+R3(config)# ipv6 cef
+
+Step 6: Configure OSPFv3.
+R1(config)# interface loopback0
+R1(config-if)# ipv6 ospf 1 area 0
+R1(config-if)# interface serial0/0/0
+R1(config-if)# ipv6 ospf 1 area 0
+R1(config-if)# interface serial0/0/1
+R1(config-if)# ipv6 ospf 1 area 0
+R2(config)# interface loopback0
+R2(config-if)# ipv6 ospf 1 area 0
+R2(config-if)# interface serial0/0/0
+R2(config-if)# ipv6 ospf 1 area 0
+R2(config-if)# interface fastEthernet 0/0
+R2(config-if)# ipv6 ospf 1 area 0
+R3(config)# interface loopback0
+R3(config-if)# ipv6 ospf 1 area 0
+R3(config-if)# interface serial0/0/0
+R3(config-if)# ipv6 ospf 1 area 0
+R3(config-if)# interface fastEthernet 0/0
+R3(config-if)# ipv6 ospf 1 area 0
+b. Verify that you have OSPFv3 neighbors with the show ipv6 ospf neighbor command.
+R1, R2, R3# show ipv6 ospf neighbor
+R1, R2, R3# show ipv6 route .
+R1, R2, R3# show ipv6 ospf interface
+
+
+
+
+
+
+Configure EtherChannel.
+
+Step 1: Configure basic switch parameters.
+DLS1# configure terminal
+DLS1(config)# interface range fastEthernet 0/7 - 12
+DLS1(config-if-range)# switchport trunk encapsulation dot1q
+DLS1(config-if-range)# switchport mode trunk
+DLS2# configure terminal
+DLS2(config)# interface range fastEthernet 0/7 - 12
+DLS2(config-if-range)# switchport trunk encapsulation dot1q
+DLS2(config-if-range)# switchport mode trunk
+ALS1# configure terminal
+ALS1(config)# interface range fastEthernet 0/7 - 12
+ALS1(config-if-range)# switchport mode trunk
+ALS2# configure terminal
+ALS2(config)# interface range fastEthernet 0/7 - 12
+ALS2(config-if-range)# switchport mode trunk
+
+Step 2: Configure an EtherChannel with Cisco PAgP.
+ALS1# show interfaces trunk
+ON ALS1 AND ALS2
+ALS1(config)# interface range fastEthernet 0/11 - 12
+ALS1(config-if-range)# channel-group 1 mode desirable
+ALS1(config)# interface port-channel 1
+ALS1(config-if)# switchport mode trunk
+ALS1# show etherchannel summary
+Number of channel-groups in use: 1
+Number of aggregators: 1
+Group Port-channel Protocol Ports
+1 Po1(SU) PAgP Fa0/11(P) Fa0/12(P)
+
+ALS2# show etherchannel summary
+ALS1# show interfaces trunk
+Po1 on 802.1q trunking 1
+ALS1# show spanning-tree
+Po1 Desg FWD 12 128.56 P2p
+
+Step 3: Configure an 802.3ad LACP EtherChannel.
+ALS1(config)# interface range fastEthernet 0/7 - 8
+ALS1(config-if-range)# channel-group 2 mode active
+Creating a port-channel interface Port-channel 2
+ALS1(config-if-range)# interface port-channel 2
+ALS1(config-if)# switchport mode trunk
+ALS1# show etherchannel summary
+2 Po2(SU) LACP Fa0/7(P) Fa0/8(P)
+
+Step 4: Configure a Layer 3 EtherChannel.
+DLS1(config)# interface range fastEthernet 0/11 - 12
+DLS1(config-if-range)# no switchport
+DLS1(config-if-range)# channel-group 3 mode desirable
+Creating a port-channel interface Port-channel 3
+DLS1(config-if-range)# interface port-channel 3
+DLS1(config-if)# ip address 10.0.0.1 255.255.255.0
+DLS2(config)# interface range fastEthernet 0/11 - 12
+DLS2(config-if-range)# no switchport
+DLS2(config-if-range)# channel-group 3 mode desirable
+Creating a port-channel interface Port-channel 3
+DLS2(config-if-range)# interface port-channel 3
+DLS2(config-if)# ip address 10.0.0.2 255.255.255.0
+DLS1# ping 10.0.0.2
+DLS1# show etherchannel summary
+Group Port-channel Protocol Ports
+2 Po2(SU) LACP Fa0/7(P) Fa0/8(P)
+3 Po3(RU) PAgP Fa0/11(P) Fa0/12(P)
+
+Step 5: Configure load balancing.
+DLS1# show etherchannel load-balance
+ALS1(config)# port-channel load-balance src-dst-mac
+ALS1# show etherchannel load-balance
+
+
+
+Static Vlans Trunking and vtp Domain and modes
+
+Step 1: Configure basic switch parameters.
+Switch# configure terminal
+Switch(config)# hostname DLS1
+DLS1(config)# interface vlan 1
+DLS1(config-if)# ip address 10.1.1.101 255.255.255.0
+DLS1(config-if)# no shutdown
+Switch# configure terminal
+Switch(config)# hostname DLS2
+DLS2(config)# interface vlan 1
+DLS2(config-if)# ip address 10.1.1.102 255.255.255.0
+DLS2(config-if)# no shutdown
+Switch# configure terminal
+Switch(config)# hostname ALS1
+ALS1(config)# interface vlan 1
+ALS1(config-if)# ip address 10.1.1.103 255.255.255.0
+ALS1(config-if)# no shutdown
+Switch# configure terminal
+Switch(config)# hostname ALS2
+ALS2(config)# interface vlan 1
+ALS2(config-if)# ip address 10.1.1.104 255.255.255.0
+ALS2(config-if)# no shutdown
+
+Step 2: Display the switch default VLAN information.
+ALS1# show vlan
+
+Step 3: Examine VTP information.
+DLS1# show vtp status
+VTP Version                     : running VTP1 (VTP2 capable)
+Configuration Revision          : 0
+Maximum VLANs supported locally : 1005
+Number of existing VLANs        : 5
+VTP Operating Mode              : Server
+
+Step 4: Configure VTP on the switches.
+DLS1(config)# vtp domain SWLAB
+Changing VTP domain name from NULL to SWLAB
+DLS1(config)# vtp version 2
+DLS1(config)# vtp mode server Device
+mode already VTP SERVER.
+ALS1(config)# vtp mode client Setting device
+to VTP CLIENT mode.
+ALS1# show vtp status
+VTP Version                     : running VTP1 (VTP2 capable)
+VTP Operating Mode              : Client
+
+Step 5: Configure trunking.
+ALS1# show interfaces fastEthernet 0/7 switchport
+Name: Fa0/7
+Switchport: Enabled
+Administrative Mode: dynamic auto
+DLS1(config)# interface range fastEthernet 0/7 - 10
+DLS1(config-if-range)# switchport trunk encapsulation dot1q
+DLS1(config-if-range)# switchport mode trunk
+DLS1(config)# interface range fastEthernet 0/11 - 12
+DLS1(config-if-range)# switchport trunk encapsulation dot1q
+DLS1(config-if-range)# switchport mode trunk
+ALS1(config)# interface range fastEthernet 0/7 - 12
+ALS1(config-if)# switchport mode trunk
+ALS2(config)# interface range fastEthernet 0/7 - 12
+ALS2(config-if)# switchport mode trunk
+DLS2(config)# interface range fastEthernet 0/7 - 8
+DLS2(config-if-range)# switchport trunk encapsulation dot1q
+DLS2(config-if-range)# switchport mode trunk
+
+Step 6: Verify trunk configuration.
+ALS2# show interfaces fastEthernet 0/7 switchport
+Name: Fa0/7
+Trunking Native Mode VLAN: 1 (default)
+Operational private-vlan: none Trunking VLANs
+Enabled: ALL
+DLS1 ,DLS2,ALS1,ALS2# show interfaces trunk
+Port      Mode         Encapsulation Status        Vlan
+Fa0/7     on           802.1q        trunking      1
+Fa0/8     on           802.1q        trunking      1
+Fa0/9     on           802.1q        trunking      1
+Fa0/10    on           802.1q        trunking      1
+
+Step 7: Configure access ports.
+ALS1(config)# interface fastEthernet 0/6
+ALS1#(config-if)# switchport mode ?
+ALS1(config)# interface fastEthernet 0/6
+ALS1(config-if)# switchport mode access
+ALS1# show interfaces fastEthernet 0/6 switchport
+Name: Fa0/6
+Switchport: Enabled
+Administrative Mode: static access
+Negotiation of Trunking: Off
+
+Step 8: Verify VTP configuration.
+ALS1# show vtp status
+VTP Version                     : running VTP2
+ALS2# show vtp status
+
+Step 9: Configure VLANs by assigning port membership.
+DLS1(config)# interface FastEthernet 0/6
+DLS1(config-if-range)# switchport access vlan 100
+DLS2(config)# interface FastEthernet 0/6
+DLS2(config-if-range)# switchport access vlan 110
+% Access VLAN does not exist. Creating vlan 110
+DLS1# show vlan
+100 VLAN0100              active  Fa0/6
+110 VLAN0110          active  1002 fddi-default
+
+Step 10: Configure VLANs in configuration mode.
+DLS1(config)# vlan 120
+ALS1(config)# interface fastEthernet 0/6
+ALS1(config-if)# switchport access vlan 120
+ALS2(config)# interface fastEthernet 0/6
+ALS2(config-if)# switchport access vlan 120
+ALS1# show vlan
+
+Step 11: Change the VLAN names.
+DLS1(config)# vlan 100
+DLS1(config-vlan)# name Server-Farm-1
+DLS1(config-vlan)# exit
+DLS1(config)# vlan 110
+DLS1(config-vlan)# name Server-Farm-2
+DLS1(config-vlan)# exit
+DLS1(config)# vlan 120
+DLS1(config-vlan)# name Net-Eng
+DLS1(config-vlan)# exit
+DLS1# show vlan
+
+Gi0/2 100 Server-Farm-1       active Fa0/6
+110 Server-Farm-2             active 120 Net-Eng
+active 1002 fddi-default      act/unsup 1003 token-ring-
+default act/unsup 1004 fddinet-default
+act/unsup 1005 trnet-default  act/unsup
+
+
+
+Practical 8a, Per-VLAN Spanning Tree Behavior
+Topology
+(Diagram shows DLS1, DLS2, ALS1, and ALS2 connected via multiple FastEthernet links including Fa0/7 through Fa0/12)
+
+ON DLS1 AND DLS2
+DLS1(config)# interface range fastEthernet 0/7 - 12
+DLS1(config-if-range)# switchport trunk encapsulation dot1q
+DLS1(config-if-range)# switchport mode trunk
+
+ALS1# configure terminal
+ALS1(config)# interface range fastEthernet 0/7 - 12
+ALS1(config-if-range)# switchport mode trunk
+
+ALS2# configure terminal
+ALS2(config)# interface range fastEthernet 0/7 - 12
+ALS2(config-if-range)# switchport mode trunk
+
+Step 1: Configure VTP.
+DLS1(config)# vtp mode transparent
+Setting device to VTP TRANSPARENT mode.
+DLS1(config)# vtp domain CISCO
+Changing VTP domain name from NULL to CISCO
+DLS1(config)# vlan 10,20
+DLS1(config-vlan)# end
+
+DLS1# show vlan brief.
+DLS1# show spanning-tree
+
+Spanning tree enabled protocol ieee  Root ID
+Priority 3276
+
+VLAN0010
+VLAN0020
+
+Step 3: Assign a root switch for each VLAN. .
+DLS1(config)# spanning-tree vlan 10 priority 4096
+DLS2(config)# spanning-tree vlan 20 priority 4096
+DLS1# show spanning-tree
+VLAN0010
+This bridge is the root
+
+DLS2# show spanning-tree
+VLAN0001
+This bridge is the root
+VLAN0020
+Spanning tree enabled protocol ieee  Root ID
+Priority 4116
+Address 000a.b8a9.d680
+This bridge is the root
+
+ALS1# show spanning-tree
+ALS2# show spanning-tree
+
+Step 4: Configure RSTP.
+DLS1(config)# spanning-tree mode rapid-pvst
+DLS1# show spanning-tree
+VLAN0001
+Spanning tree enabled protocol rstp Root ID
+Priority 32769
+Address 000a.b8a9.d680
+Cost 19
+Port 13 (FastEthernet0/11)
+Hello Time 2 sec Max Age 20 sec Forward Delay 15 sec
+
+VLAN0010
+Spanning tree enabled protocol rstp Root ID
+Priority 4106
+Address 000a.b8a9.d780
+This bridge is the root
+Hello Time 2 sec Max Age 20 sec Forward Delay 15 sec
+
+VLAN0020
+Spanning tree enabled protocol rstp Root ID
+Priority 4116
+Address 000a.b8a9.d680
+
+
+"Practical 9a: Inter-VLAN Routing with an External Router."
+
+Practical 9a: Inter-VLAN Routing with an External Router
+
+Topology
+(Diagram shows R2 connected to R1 via Serial links, R1 connected to ALS1 via a trunk link, and ALS1 connected to ALS2 via an EtherChannel trunk. Host A is connected to ALS1 and Host B is connected to ALS2.)
+
+Objective
+Step 1: Configure the hosts.
+Configure PC hosts A and B with the IP address, subnet mask (/24), and default gateway shown in the topology.
+
+Step 2: Configure the routers.
+Router(config)# hostname ISP
+ISP(config)# interface Loopback0
+ISP(config-if)# ip address 200.200.200.1 255.255.255.0
+ISP(config-if)# interface Serial0/0/0
+ISP(config-if)# ip address 192.168.1.2 255.255.255.0
+ISP(config-if)# no shutdown
+ISP(config-if)# exit
+ISP(config)# ip route 172.16.0.0 255.255.0.0 192.168.1.1
+
+Router(config)# hostname Gateway
+Gateway(config)# interface Serial0/0/0
+Gateway(config-if)# ip address 192.168.1.1 255.255.255.0
+Gateway(config-if)# clockrate 64000
+Gateway(config-if)# no shutdown
+Gateway(config-if)# exit
+Gateway(config)# ip route 0.0.0.0 0.0.0.0 192.168.1.2
+
+Step 3: Configure the switches.
+Switch(config)# hostname ALS1
+ALS1(config)# interface vlan 1
+ALS1(config-if)# ip address 172.16.1.101 255.255.255.0
+ALS1(config-if)# no shutdown
+ALS1(config-if)# exit
+ALS1(config)# ip default-gateway 172.16.1.1
+
+The following is a sample configuration for switch ALS2.
+Switch(config)# hostname ALS2
+ALS2(config)# interface vlan 1
+ALS2(config-if)# ip address 172.16.1.102 255.255.255.0
+ALS2(config-if)# no shutdown
+ALS2(config-if)# exit
+ALS2(config)# ip default-gateway 172.16.1.1
+
+Step 4: Confirm the VLANs.
+ALS1# show vlan
+
+Step 5: Configure trunk links and EtherChannel on switches.
+ALS1# configure terminal
+ALS1(config)# interface range fastEthernet 0/11 - 12
+ALS1(config-if-range)# switchport mode trunk
+ALS1(config-if-range)# channel-group 1 mode desirable
+ALS1(config-if-range)# end
+
+ALS2# configure terminal
+ALS2(config)# interface range fastEthernet 0/11 - 12
+ALS2(config-if-range)# switchport mode trunk
+ALS2(config-if-range)# channel-group 1 mode desirable
+ALS2(config-if-range)# end
+
+b. ALS1# show etherchannel 1 summary
+1   Po1(SU)      PAgP   Fa0/11(P) Fa0/12(P)
+
+Step 6: Configure VTP.
+ALS2(config)# vtp mode client
+Setting device to VTP CLIENT mode.
+
+ALS1(config)# vtp domain SWLAB
+Changing VTP domain name from NULL to SWLAB
+ALS1(config)# vtp version 2
+ALS1# show vtp status
+ALS2# show vtp status
+Configuration last modified by 172.16.1.101 at 2-28-10 00:36:24
+
+Step 7: Configure VLANs and switch access ports.
+ALS1(config)# vlan 100
+ALS1(config-vlan)# name Payroll
+ALS1(config-vlan)# vlan 200
+ALS1(config-vlan)# name Engineering
+
+a. ALS2# show vlan brief
+b. 100 Payroll            active
+200 Engineering        active
+
+ALS1(config)# interface fastEthernet 0/6
+ALS1(config-if)# switchport mode access
+ALS1(config-if)# switchport access vlan 100
+ALS1(config-if)# spanning-tree portfast
+
+ALS2(config)# interface fastEthernet 0/6
+ALS2(config-if)# switchport mode access
+ALS2(config-if)# switchport access vlan 200
+ALS2(config-if)# spanning-tree portfast
+
+ALS1# show vlan brief
+100 Payroll               active  Fa0/6
+200 Engineering           active
+
+ALS2# show vlan brief
+200 Engineering           active  Fa0/6
+
+Step 9: Configure ALS1 trunking to the Gateway router.
+ALS1(config)# interface fastEthernet 0/1
+ALS1(config-if)# switchport mode trunk
+ALS1(config-if)# end
+
+Note: Optionally, you can apply the spanning-tree portfast trunk command to interface Fa0/1 of switch ALS1. This allows the link to the router to rapidly transition to the forwarding state despite being a trunk.
+
+Step 10: Configure the Gateway router Fast Ethernet interface for VLAN trunking.
+Gateway(config)# interface fastEthernet 0/0
+Gateway(config-if)# no shut
+Gateway(config)# interface fastEthernet 0/0.1
+Gateway(config-subif)# description Management VLAN 1
+Gateway(config-subif)# encapsulation dot1q 1 native
+Gateway(config-subif)# ip address 172.16.1.1 255.255.255.0
+
+Gateway(config-subif)# interface fastEthernet 0/0.100
+Gateway(config-subif)# description Payroll VLAN 100
+Gateway(config-subif)# encapsulation dot1q 100
+Gateway(config-subif)# ip address 172.16.100.1 255.255.255.0
+
+The following is a sample configuration for the VLAN 200 subinterface.
+Gateway(config-subif)# interface fastEthernet 0/0.200
+Gateway(config-subif)# description Engineering VLAN 200
+Gateway(config-subif)# encapsulation dot1q 200
+Gateway(config-subif)# ip address 172.16.200.1 255.255.255.0
+Gateway(config-subif)# end
+
+b. Use the show ip interface brief command to verify the interface configuration and status.
+Gateway# show ip interface brief
+Interface              IP-Address      OK? Method Status                Protocol
+FastEthernet0/0        unassigned      YES unset  up                    up
+FastEthernet0/0.1      172.16.1.1      YES manual up                    up
+FastEthernet0/0.100     172.16.100.1    YES manual up                    up
+FastEthernet0/0.200     172.16.200.1    YES manual up                    up
+
+c. Gateway# show interfaces description
+Fa0/0.1                up              up       Management VLAN 1
+Fa0/0.100              up              up       Payroll VLAN 100
+Fa0/0.200              up              up       Engineering VLAN 200
+
+d. Gateway# show vlans
